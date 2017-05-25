@@ -1,0 +1,21 @@
+{
+  "name": "breakout",
+  "version": "1.0.0",
+  "description": "A breakout style game to be used as base of a ANN example",
+  "main": "gulp serve",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "keywords": [
+    "ANN",
+    "AI"
+  ],
+  "author": "Ramy Deeb <me@ramydeeb.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "browser-sync": "^2.18.12",
+    "gulp": "^3.9.1",
+    "gulp-sass": "^3.1.0",
+    "phaser-ce": "^2.7.10"
+  }
+}
