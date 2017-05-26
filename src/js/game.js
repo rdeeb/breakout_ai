@@ -7,6 +7,9 @@ var game = new Phaser.Game(480, 320, Phaser.AUTO, null, {
 var ball;
 var paddle;
 var bricks;
+var iteration = 0;
+var iterationText;
+var maxVelocity = 250;
 
 function preload() {
     game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -27,7 +30,7 @@ function create() {
     game.physics.arcade.checkCollision.down = false;
 
     // Ball
-    ball = game.add.sprite(game.world.width*0.5, game.world.height-25, 'ball');
+    ball = game.add.sprite(game.world.width*getRandomArbitrary(-1.5,1.5), game.world.height-25, 'ball');
     game.physics.enable(ball, Phaser.Physics.ARCADE);
     ball.body.velocity.set(150, -150);
     ball.body.collideWorldBounds = true;
@@ -40,16 +43,24 @@ function create() {
     paddle = game.add.sprite(game.world.width*0.5, game.world.height - 5, 'paddle');
     paddle.anchor.set(0.5, 1);
     game.physics.enable(paddle, Phaser.Physics.ARCADE);
+    paddle.checkWorldBounds = true;
+    paddle.body.bounce.set(0);
     paddle.body.immovable = true;
 
     // Bricks
     createBrickGrid();
+
+    // Scores
+    iterationText = game.add.text(5, 5, 'Iteration: '+iteration, { font: '18px Arial', fill: '#0095DD' });
+
+    // Brains!
+    updateGameStatus();
 }
 
 function update() {
-    game.physics.arcade.collide(ball, paddle);
+    game.physics.arcade.collide(ball, paddle, logHit);
     game.physics.arcade.collide(ball, bricks, whenBrickIsHit);
-    paddle.x = game.input.x || game.world.width*0.5;
+    // paddle.x = game.input.x || game.world.width*0.5;
 }
 
 function createBrickGrid() {
@@ -88,17 +99,55 @@ function whenBrickIsHit(ball, brick) {
             alive++;
         }
     }
-    if (alive == 0) {
+    if (alive === 0) {
         handleFinished();
     }
 }
 
 function handleGameover() {
-    alert('Game over!');
-    location.reload();
+    // alert('Game over!');
+    console.log('Game Over! ball went thru');
+    logError();
+    // Restart our game
+    restartGame();
 }
 
 function handleFinished() {
     alert('You did it!');
-    location.reload();
+    restartGame();
+}
+
+function moveLeft() {
+    paddle.body.velocity.x -= 2;
+    if (Math.abs(paddle.body.velocity.x) > maxVelocity) {
+        paddle.body.velocity.x = -1 * maxVelocity;
+    }
+    if (paddle.x < game.world.bounds.x) {
+        paddle.body.velocity.x = 0;
+        return false;
+    }
+    console.log('←');
+    return true;
+}
+
+function moveRight() {
+    paddle.body.velocity.x += 2;
+    if (Math.abs(paddle.body.velocity.x) > maxVelocity) {
+        paddle.body.velocity.x = maxVelocity;
+    }
+    if (paddle.x > game.world.bounds.width) {
+        paddle.body.velocity.x = 0;
+        return false;
+    }
+    console.log('→');
+    return true;
+}
+
+function restartGame() {
+    iteration++;
+    game.state.restart();
+}
+
+function getRandomArbitrary(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
 }
