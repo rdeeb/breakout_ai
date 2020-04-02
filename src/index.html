@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= htmlWebpackPlugin.options.title || 'Breakout AI Game'%></title>
+</head>
+<body>
+<% if (htmlWebpackPlugin.options.appMountId) { %>
+<div id="<%= htmlWebpackPlugin.options.appMountId%>"></div>
+<% } %>
+
+<% for (var chunk in htmlWebpackPlugin.files.chunks) { %>
+<script src="<%= htmlWebpackPlugin.files.chunks[chunk].entry %>"></script>
+<% } %>
+
+<% if (htmlWebpackPlugin.options.devServer) { %>
+<script src="<%= htmlWebpackPlugin.options.devServer%>/webpack-dev-server.js"></script>
+<% } %>
+</body>
+</html>

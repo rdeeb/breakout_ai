@@ -1,23 +1,21 @@
 # An Artificial Neural Network that Plays a breakout game
 
-This is a basic game of breakout [Thanks MDN](https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_breakout_game_Phaser)
-with the added ability to have self learning capabilites, in order to play the game itself
+So after a few years of this repo being around I decided to update it to use TensorFlow.js and a nicer version of the
+game.
 
 ## Running the app
 
 Download the git repository, go to your console and install the dependencies
 
 ```
-$ npm install
+$ yarn install
 ```
 
 Now run the server
 
 ```
-$ gulp serve
+$ yarn start-dev
 ```
-
-To have the ANN enabled version, download the `develop` branch
 
 ## License
 
@@ -30,5 +28,5 @@ material, and haven't been properly tested.
 
 ## Credits
 
-[MDN](https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_breakout_game_Phaser) For the base game
-[Juan Cazala](https://synaptic.juancazala.com) For his library Synaptic.js the real hero here
+- [Phaser.io](https://phaser.io/examples/v3/view/games/breakout/breakout) For the base game
+- [Tensorflow.js](https://www.tensorflow.org/js/)
