@@ -1,104 +1,142 @@
-var game = new Phaser.Game(480, 320, Phaser.AUTO, null, {
-    preload: preload,
-    create: create,
-    update: update
+import Phaser from "phaser";
+
+const Breakout = new Phaser.Class({
+
+    Extends: Phaser.Scene,
+
+    initialize:
+
+        function Breakout ()
+        {
+            Phaser.Scene.call(this, { key: 'breakout' });
+
+            this.bricks;
+            this.paddle;
+            this.ball;
+        },
+
+        preload: function ()
+        {
+            this.load.atlas('assets', 'assets/images/breakout.png', 'assets/breakout.json');
+        },
+
+        create: function ()
+        {
+            //  Enable world bounds, but disable the floor
+            this.physics.world.setBoundsCollision(true, true, true, false);
+
+            //  Create the bricks in a 10x6 grid
+            this.bricks = this.physics.add.staticGroup({
+                key: 'assets', frame: [ 'blue1', 'red1', 'green1', 'yellow1', 'silver1', 'purple1' ],
+                frameQuantity: 10,
+                gridAlign: { width: 10, height: 6, cellWidth: 64, cellHeight: 32, x: 112, y: 100 }
+            });
+
+            this.ball = this.physics.add.image(400, 500, 'assets', 'ball1').setCollideWorldBounds(true).setBounce(1);
+            this.ball.setData('onPaddle', true);
+
+            this.paddle = this.physics.add.image(400, 550, 'assets', 'paddle1').setImmovable();
+
+            //  Our colliders
+            this.physics.add.collider(this.ball, this.bricks, this.hitBrick, null, this);
+            this.physics.add.collider(this.ball, this.paddle, this.hitPaddle, null, this);
+
+            // TODO: This is the part where we will need to hook up our AI
+            //  Input events
+            this.input.on('pointermove', function (pointer) {
+
+                //  Keep the paddle within the game
+                this.paddle.x = Phaser.Math.Clamp(pointer.x, 52, 748);
+
+                if (this.ball.getData('onPaddle'))
+                {
+                    this.ball.x = this.paddle.x;
+                }
+
+            }, this);
+
+            this.input.on('pointerup', function (pointer) {
+
+                if (this.ball.getData('onPaddle'))
+                {
+                    this.ball.setVelocity(-75, -300);
+                    this.ball.setData('onPaddle', false);
+                }
+
+            }, this);
+        },
+
+        hitBrick: function (ball, brick)
+        {
+            brick.disableBody(true, true);
+
+            if (this.bricks.countActive() === 0)
+            {
+                this.resetLevel();
+            }
+        },
+
+        resetBall: function ()
+        {
+            this.ball.setVelocity(0);
+            this.ball.setPosition(this.paddle.x, 500);
+            this.ball.setData('onPaddle', true);
+        },
+
+        resetLevel: function ()
+        {
+            this.resetBall();
+
+            this.bricks.children.each(function (brick) {
+
+                brick.enableBody(false, 0, 0, true, true);
+
+            });
+        },
+
+        hitPaddle: function (ball, paddle)
+        {
+            var diff = 0;
+
+            if (ball.x < paddle.x)
+            {
+                //  Ball is on the left-hand side of the paddle
+                diff = paddle.x - ball.x;
+                ball.setVelocityX(-10 * diff);
+            }
+            else if (ball.x > paddle.x)
+            {
+                //  Ball is on the right-hand side of the paddle
+                diff = ball.x -paddle.x;
+                ball.setVelocityX(10 * diff);
+            }
+            else
+            {
+                //  Ball is perfectly in the middle
+                //  Add a little random X to stop it bouncing straight up!
+                ball.setVelocityX(2 + Math.random() * 8);
+            }
+        },
+
+        update: function ()
+        {
+            if (this.ball.y > 600)
+            {
+                this.resetBall();
+            }
+        }
+
 });
 
-var ball;
-var paddle;
-var bricks;
-
-function preload() {
-    game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-    game.scale.pageAlignHorizontally = true;
-    game.scale.pageAlignVertically = true;
-    game.stage.backgroundColor = '#EEE';
-
-    //Load the Assets
-    game.load.image('ball', 'public/images/ball.png');
-    game.load.image('paddle', 'public/images/paddle.png');
-    game.load.image('brick', 'public/images/brick.png');
-
-}
-
-function create() {
-    // World
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    game.physics.arcade.checkCollision.down = false;
-
-    // Ball
-    ball = game.add.sprite(game.world.width*0.5, game.world.height-25, 'ball');
-    game.physics.enable(ball, Phaser.Physics.ARCADE);
-    ball.body.velocity.set(150, -150);
-    ball.body.collideWorldBounds = true;
-    ball.anchor.set(0.5);
-    ball.body.bounce.set(1);
-    ball.checkWorldBounds = true;
-    ball.events.onOutOfBounds.add(handleGameover, this);
-
-    // Paddle
-    paddle = game.add.sprite(game.world.width*0.5, game.world.height - 5, 'paddle');
-    paddle.anchor.set(0.5, 1);
-    game.physics.enable(paddle, Phaser.Physics.ARCADE);
-    paddle.body.immovable = true;
-
-    // Bricks
-    createBrickGrid();
-}
-
-function update() {
-    game.physics.arcade.collide(ball, paddle);
-    game.physics.arcade.collide(ball, bricks, whenBrickIsHit);
-    paddle.x = game.input.x || game.world.width*0.5;
-}
-
-function createBrickGrid() {
-    var brickInfo = {
-        width: 50,
-        height: 20,
-        count: {
-            row: 7,
-            col: 3
-        },
-        offset: {
-            top: 50,
-            left: 60
-        },
-        padding: 10
-    };
-    bricks = game.add.group();
-    for (var c=0; c<brickInfo.count.col; c++) {
-        for (var r=0; r<brickInfo.count.row; r++) {
-            var brickX = (r*(brickInfo.width+brickInfo.padding))+brickInfo.offset.left;
-            var brickY = (c*(brickInfo.height+brickInfo.padding))+brickInfo.offset.top;
-            var newBrick = game.add.sprite(brickX, brickY, 'brick');
-            game.physics.enable(newBrick);
-            newBrick.body.immovable = true;
-            newBrick.anchor.set(0.5);
-            bricks.add(newBrick);
-        }
+const config = {
+    type: Phaser.WEBGL,
+    width: 800,
+    height: 600,
+    parent: 'breakout-example',
+    scene: [ Breakout ],
+    physics: {
+        default: 'arcade'
     }
-}
+};
 
-function whenBrickIsHit(ball, brick) {
-    brick.kill();
-    var alive = 0;
-    for (var i=0; i < bricks.children.length; i++) {
-        if (bricks.children[i].alive === true) {
-            alive++;
-        }
-    }
-    if (alive == 0) {
-        handleFinished();
-    }
-}
-
-function handleGameover() {
-    alert('Game over!');
-    location.reload();
-}
-
-function handleFinished() {
-    alert('You did it!');
-    location.reload();
-}
+const game = new Phaser.Game(config);
