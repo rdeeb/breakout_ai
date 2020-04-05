@@ -1,4 +1,7 @@
 import Phaser from "phaser";
+import Model from "./model";
+
+const model = new Model();
 
 const Breakout = new Phaser.Class({
 
@@ -43,7 +46,7 @@ const Breakout = new Phaser.Class({
 
             // TODO: This is the part where we will need to hook up our AI
             //  Input events
-            this.input.on('pointermove', function (pointer) {
+            /*this.input.on('pointermove', function (pointer) {
 
                 //  Keep the paddle within the game
                 this.paddle.x = Phaser.Math.Clamp(pointer.x, 52, 748);
@@ -53,9 +56,9 @@ const Breakout = new Phaser.Class({
                     this.ball.x = this.paddle.x;
                 }
 
-            }, this);
+            }, this);*/
 
-            this.input.on('pointerup', function (pointer) {
+            /*this.input.on('pointerup', function (pointer) {
 
                 if (this.ball.getData('onPaddle'))
                 {
@@ -63,7 +66,7 @@ const Breakout = new Phaser.Class({
                     this.ball.setData('onPaddle', false);
                 }
 
-            }, this);
+            }, this);*/
         },
 
         hitBrick: function (ball, brick)
@@ -81,10 +84,12 @@ const Breakout = new Phaser.Class({
             this.ball.setVelocity(0);
             this.ball.setPosition(this.paddle.x, 500);
             this.ball.setData('onPaddle', true);
+            model.train();
         },
 
         resetLevel: function ()
         {
+            // Game Over reset
             this.resetBall();
 
             this.bricks.children.each(function (brick) {
@@ -118,12 +123,29 @@ const Breakout = new Phaser.Class({
             }
         },
 
-        update: function ()
+        update: async function ()
         {
             if (this.ball.y > 600)
             {
+                // Lost
+                model.handleLostGame(this.ball, this.paddle);
                 this.resetBall();
             }
+            // Automatically put the ball in movement
+            if (this.ball.getData('onPaddle'))
+            {
+                this.ball.setVelocity(-75, -300);
+                this.ball.setData('onPaddle', false);
+            }
+            const prediction = await model.predict(this.ball, this.paddle);
+            const predictionData = await prediction.data();
+            if (predictionData[0] > predictionData[1]){
+                // We need to move to the left
+                this.paddle.x = Phaser.Math.Clamp((this.paddle.x - 25), 52, 748);
+            } else {
+                this.paddle.x = Phaser.Math.Clamp((this.paddle.x + 25), 52, 748);
+            }
+
         }
 
 });
